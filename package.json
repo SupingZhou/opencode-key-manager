@@ -1,0 +1,34 @@
+{
+  "name": "opencode-key-manager",
+  "version": "1.0.1",
+  "description": "Switch between multiple API keys in the OpenCode TUI sidebar. Supports opencode-go, SiliconFlow, and any OpenAI-compatible provider.",
+  "type": "module",
+  "exports": {
+    "./tui": {
+      "import": "./tui.tsx"
+    }
+  },
+  "files": [
+    "tui.tsx"
+  ],
+  "peerDependencies": {
+    "@opencode-ai/plugin": ">=1.14.0",
+    "@opencode-ai/sdk": ">=1.14.0",
+    "@opentui/core": ">=0.2.0",
+    "@opentui/solid": ">=0.2.0",
+    "solid-js": ">=1.9.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SupingZhou/opencode-key-manager.git"
+  },
+  "author": "SupingZhou",
+  "keywords": [
+    "opencode",
+    "plugin",
+    "tui",
+    "api-key",
+    "llm"
+  ],
+  "license": "MIT"
+}
