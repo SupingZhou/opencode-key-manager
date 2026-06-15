@@ -16,8 +16,7 @@ Single-file TUI plugin (`tui.tsx`, ~690 lines) registered as a `sidebar_content`
 │  │  ├─ profiles: Signal<KeyProfile[]>          ││
 │  │  ├─ activeIds: Signal<Record<string,str>>   ││
 │  │  ├─ folds: Signal<Record<string,bool>>      ││
-│  │  ├─ panelWidth: Signal<number>              ││
-│  │  └─ usageCache: Signal<Record<str,Usage>>   ││
+│  │  ├─ panelWidth: Signal<number>              │
 │  │                                             ││
 │  │  Slots                                      ││
 │  │  └─ sidebar_content → JSX.Element           ││
