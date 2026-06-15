@@ -240,17 +240,18 @@ async function tui(api: TuiPluginApi): TuiPlugin {
       if (res.error) { toast("Config read failed: " + res.error); return }
       const cfg = res.data
       const providers = { ...(cfg?.provider ?? {}) }
-      if (!providers[providerID]) {
-        const existingModels = providers["opencode-go-2"]?.models ?? { "big-pickle": {} }
-        providers[providerID] = {
-          options: { apiKey },
-          models: existingModels,
-        }
-        const up = await api.client.global.config.update({
-          config: { ...(cfg ?? {}), provider: providers },
-        })
-        if (up.error) { toast("Config write failed: " + up.error); return }
+      if (!providers[providerID] || !providers[providerID]?.options?.apiKey) {
+        toast('Added. Use /connect ' + providerID + ' first, then /key-sync')
+        return
       }
+      providers[providerID] = {
+        ...(providers[providerID] ?? {}),
+        options: { apiKey },
+      }
+      const up = await api.client.global.config.update({
+        config: { ...(cfg ?? {}), provider: providers },
+      })
+      if (up.error) { toast("Config write failed: " + up.error); return }
       toast('Added "' + label + '"')
     } catch (e) { toast("Add key error: " + String(e)) }
   }
@@ -360,12 +361,12 @@ async function tui(api: TuiPluginApi): TuiPlugin {
                 if (!key.startsWith("sk-")) { toast("Key should start with sk-"); return }
                 if (profiles().some(p => p.apiKey === key)) { toast("Key already exists"); return }
 
-                const existingPids = [...new Set(profiles().map(p => p.providerID))]
-                const pids = [
-                  "opencode-go",
-                  "siliconflow",
-                  ...existingPids.filter(p => p !== "opencode-go" && p !== "siliconflow"),
-                ]
+                const configRes = await api.client.global.config.get()
+                const cfgProvs = Object.keys(configRes.data?.provider ?? {}).filter(
+                  pid => configRes.data.provider[pid]?.options?.apiKey
+                )
+                const profilePids = [...new Set(profiles().map(p => p.providerID))]
+                const pids = [...new Set([...cfgProvs, ...profilePids])].sort()
                 const options = [
                   ...pids.map(p => ({ title: p, value: p })),
                   { title: "Custom (enter new ID)", value: "__custom__" },
@@ -469,7 +470,7 @@ async function tui(api: TuiPluginApi): TuiPlugin {
     {
       title: "Add API key",
       value: "km.add",
-      description: "Add a new API key (label \u2192 key \u2192 provider)",
+      description: "Add a new API key for an already-connected provider",
       slash: { name: "key-add", aliases: ["key-new"] },
       onSelect: () => startAdd(),
     },
@@ -602,9 +603,6 @@ async function tui(api: TuiPluginApi): TuiPlugin {
               <text onMouseUp={async () => { await syncConfigProviders(); toast("Synced") }}>
                 <span style={{ fg: pal.primary, bold: true }}>Key Manager</span>
               </text>
-              <text onMouseUp={startAdd}>
-                <span style={{ fg: pal.primary }}>[+]</span>
-              </text>
               <text onMouseUp={editPicker}>
                 <span style={{ fg: pal.primary }}>[E]</span>
               </text>
@@ -627,11 +625,6 @@ async function tui(api: TuiPluginApi): TuiPlugin {
               const activeInGroup = keys.find(k => k.id === activeIds()[pid])
               return (
                 <>
-                  {idx > 0 && (
-                    <text>
-                      <span style={{ fg: pal.muted }}>{sep()}</span>
-                    </text>
-                  )}
                   <box flexDirection="row">
                     <text onMouseUp={() => persistFold(pid, !expanded)}>
                       <span style={{ fg: pal.text }}>
@@ -648,6 +641,9 @@ async function tui(api: TuiPluginApi): TuiPlugin {
                         <span style={{ fg: pal.primary }}> [+]</span>
                       </text>
                     </Show>
+                    <text>
+                      <span style={{ fg: pal.muted }}>{sep().slice((expanded ? "\u25bc " : "\u25b6 ").length + pid.length + (" (" + keys.length + ")").length + (expanded ? 4 : 0) + ((!expanded && activeInGroup) ? (" [" + activeInGroup.label + "]").length : 0))}</span>
+                    </text>
                   </box>
 
                   <Show when={expanded}>
@@ -659,6 +655,7 @@ async function tui(api: TuiPluginApi): TuiPlugin {
                             {"  "}{isActive ? "\u25CF" : "\u25CB"}
                           </span>
                           <span style={{ fg: pal.text }}> {k.label}</span>
+                          <span style={{ fg: pal.muted }}> …{k.apiKey.slice(-6)}</span>
                           {k.label.startsWith("config:") && (
                             <span style={{ fg: pal.muted }}> [config]</span>
                           )}

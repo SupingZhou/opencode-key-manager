@@ -34,17 +34,30 @@ Restart OpenCode. The **Key Manager** panel appears in the sidebar.
 
 ## Setup
 
-1. Add your first key: click `[+]` in the sidebar header or run `/key-add`
-2. Enter a label (e.g. `work-account`), the API key, and select a provider
-3. Click a key in the sidebar to activate it, or use `/key-switch`
+For a new provider, configure it via OpenCode's `/connect` command first:
 
-New providers discovered in `opencode.jsonc` are auto-imported as `config:providerID` entries during sync (triggered on startup or manually via `/key-sync`).
+```
+/connect deepseek     → enter API key, provider is set up with correct models
+/connect siliconflow  → same for SiliconFlow
+```
+
+After connecting, run `/key-sync` or restart OpenCode — the provider is auto-imported as a `config:` key entry.
+
+To add additional keys for an already-connected provider:
+
+1. Click the provider header `[+]` or run `/key-add`
+2. Enter a label and the API key
+3. The key is now available to switch to
+
+New providers discovered in `opencode.jsonc` are auto-imported during sync (triggered on startup or manually via `/key-sync`).
+
+> **Note:** Use `/connect {provider}` to add a new provider. `/key-add` only works for providers already configured in `opencode.jsonc`.
 
 ## Commands
 
 | Slash | Action |
 |---|---|
-| `/key-add` | Add a new API key (label → key → provider) |
+| `/key-add` | Add a new API key for an already-connected provider |
 | `/key-switch` | Switch active key across all providers |
 | `/key-edit` | Edit an existing key's label or value |
 | `/key-delete` | Remove a key (auto-activates first remaining key in same provider) |
@@ -58,7 +71,7 @@ All commands also appear in the `/key-` autocomplete menu.
 
 | Element | Action |
 |---|---|
-| **Title row** `[Key Manager] [+] [E] [X]` | Title click → sync providers; `[+]` → add key; `[E]` → edit a key; `[X]` → delete a key |
+| **Title row** `[Key Manager] [E] [X]` | Title click → sync providers; `[E]` → edit a key; `[X]` → delete a key |
 | **Provider header** `▶ siliconflow (3) [+]` | Click provider name → fold/unfold; `[+]` → add key pre-selected for this provider |
 | **Key row** `● work-key` | Click → switch to this key (activated indicator: ● = active, ○ = inactive) |
 | **Bottom hint** `> /key- for all commands` | Reminder of slash prefix |
