@@ -13,6 +13,7 @@ interface KeyProfile {
 const KV_LIST = "km_list"
 const KV_ACTIVE_IDS = "km_active_ids"
 const KV_FOLDS = "km_folds"
+const KV_PLUGIN_FOLD = "km_plugin_fold"
 const CFG_BACKUP_KEY = "plugins.opencode-key-manager"
 
 function uid(): string {
@@ -87,6 +88,7 @@ async function tui(api: TuiPluginApi): TuiPlugin {
   const [profiles, setProfiles] = createSignal<KeyProfile[]>([])
   const [activeIds, setActiveIds] = createSignal<Record<string, string>>({})
   const [folds, setFolds] = createSignal<Record<string, boolean>>({})
+  const [pluginFold, setPluginFold] = createSignal(false)
   let boxEl: any
   const [panelWidth, setPanelWidth] = createSignal(26)
   const gutter = 6
@@ -122,10 +124,16 @@ async function tui(api: TuiPluginApi): TuiPlugin {
     setFolds(next)
   }
 
+  function persistPluginFold(val: boolean) {
+    api.kv.set(KV_PLUGIN_FOLD, val)
+    setPluginFold(val)
+  }
+
   function readKV() {
     const list = api.kv.get<KeyProfile[]>(KV_LIST, [])
     setProfiles(list)
     setFolds(api.kv.get<Record<string, boolean>>(KV_FOLDS, {}))
+    setPluginFold(Boolean(api.kv.get<boolean>(KV_PLUGIN_FOLD, false)))
     const old = api.kv.get<string | null>("km_active", null)
     let ids = api.kv.get<Record<string, string>>(KV_ACTIVE_IDS, {})
     if (old && Object.keys(ids).length === 0) {
@@ -600,6 +608,9 @@ async function tui(api: TuiPluginApi): TuiPlugin {
             onSizeChange={() => setPanelWidth(Math.max(20, boxEl?.width ?? 26))}
           >
             <box flexDirection="row" gap={1}>
+              <text onMouseUp={() => persistPluginFold(!pluginFold())}>
+                <span style={{ fg: pal.muted }}>{pluginFold() ? "\u25b6 " : "\u25bc "}</span>
+              </text>
               <text onMouseUp={async () => { await syncConfigProviders(); toast("Synced") }}>
                 <span style={{ fg: pal.primary, bold: true }}>Key Manager</span>
               </text>
@@ -610,6 +621,14 @@ async function tui(api: TuiPluginApi): TuiPlugin {
                 <span style={{ fg: pal.primary }}>[X]</span>
               </text>
             </box>
+            <Show when={pluginFold()}>
+              <text>
+                <span style={{ fg: pal.muted }}>
+                  {"  "}{groups().length} providers, {profiles().length} keys
+                </span>
+              </text>
+            </Show>
+            <Show when={!pluginFold()}>
             <text>
               <span style={{ fg: pal.muted }}>{sep()}</span>
             </text>
@@ -666,6 +685,7 @@ async function tui(api: TuiPluginApi): TuiPlugin {
                 </>
               )
             })}
+            </Show>
 
             <text> </text>
             <text>
